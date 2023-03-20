@@ -1,0 +1,12 @@
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      routes:
+      - id: json-placeholder
+        uri: https://jsonplaceholder.typicode.com
+        predicates:
+        - Path=/app/**
+      
