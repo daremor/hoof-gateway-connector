@@ -1,12 +1,61 @@
-server:
-  port: 8080
-
 spring:
+  mvc:
+    log-request-details: true
   cloud:
     gateway:
+      default-filters:
+        - RemoveRequestHeader=Cookie
+        - RemoveRequestHeader=Set-Cookie
+      filter:
+        remove-hop-by-hop:
+          headers:
+          - Connection
+          - Keep-Alive
+          - Transfer-Encoding
+      httpclient:
+        wiretap: true
+        ssl:
+          key-store: classpath:ssl/keystore.jks
+          key-store-type: PKCS12
+          key-password: test-password
+          useInsecureTrustManager: true
+      httpserver:
+        wiretap: true
+      metrics:
+        enabled: true
       routes:
-      - id: json-placeholder
-        uri: https://jsonplaceholder.typicode.com
+      - id: egress-proxy
+        uri: https://localhost:12443
         predicates:
         - Path=/app/**
+        filters:
+        - StripPrefix=1
+        - RemoveRequestHeader=Cookie
+        metadata:
+          response-timeout: 10000
+          connect-timeout: 10000
+
+logging:
+  level:
+    reactor:
+      netty:
+        http:
+          client: INFO
       
+    org:
+      springframework:
+        cloud:
+          gateway: INFO
+
+
+#Settings for monitoring
+management:
+  server:
+    port: 8090
+  health:
+    defaults: 
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics,loggers,gateway
